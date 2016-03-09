@@ -21,7 +21,7 @@ def hello():
 def hi(user):
 	greeting = Greeting(parent=ndb.Key("Book",user),content=user)
 	greeting.put()
-	return 'hi ' + user + ' !!'
+	return 'hi ' + user + ' !!!'
 
 @app.errorhandler(404)
 def page_not_found(e):
