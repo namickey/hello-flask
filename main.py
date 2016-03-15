@@ -1,12 +1,8 @@
-"""`main` is the top level module for your Flask application."""
-
-# Import the Flask Framework
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, render_template
 from google.appengine.ext import ndb
+import pytz
 
 app = Flask(__name__)
-# Note: We don't need to call run() since our application is embedded within
-# the App Engine WSGI application server.
 
 class Sensor(ndb.Model):
     value = ndb.StringProperty()
@@ -14,23 +10,24 @@ class Sensor(ndb.Model):
 
     @classmethod
     def query_sensor(cls, ancestor_key):
-        return cls.query(ancestor=ancestor_key).order(-cls.date)
+        #.order(-Sensor.date)
+        return cls.query(ancestor=ancestor_key)
 
-@app.route('/tem')
-def show():
-    cate = 'tem'
+@app.route('/<cate>')
+def show(cate):
+    tz_tokyo = pytz.timezone('Asia/Tokyo')
     ancestor_key = ndb.Key("Sensor", cate)
-    sensors = Sensor.query_sensor(ancestor_key).fetch(20)
+    sensors = Sensor.query_sensor(ancestor_key)
     s = ''
     for sensor in sensors:
-        s = s + sensor.value + ',' + str(sensor.date) + '\n'
-    return 'Hello World! gae!\n' + s
+        s = s + '{x: \'' + str(tz_tokyo.fromutc(sensor.date)).split('.')[0] + '\', y: ' + sensor.value + '},'
+    return render_template('index.html', data=s)
 
 @app.route('/<cate>/<value>')
 def regist(cate, value):
     sensor = Sensor(parent=ndb.Key("Sensor",cate),value=value)
     sensor.put()
-    return redirect(url_for('show') + "/" + cate)
+    return redirect(url_for('show', cate=cate))
 
 @app.errorhandler(404)
 def page_not_found(e):
